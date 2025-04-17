@@ -13,8 +13,8 @@ import (
 
 var (
 	snsClient       *sns.Client
-	successTopicArn = os.Getenv("SNS_SUCCESS_TOPIC_ARN")
-	errorTopicArn   = os.Getenv("SNS_ERROR_TOPIC_ARN")
+	successTopicArn = os.Getenv("PROCESSAMENTO_SUCESSO_TOPIC_ARN")
+	errorTopicArn   = os.Getenv("PROCESSAMENTO_ERRO_TOPIC_ARN")
 )
 
 func init() {

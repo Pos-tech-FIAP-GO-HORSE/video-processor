@@ -28,7 +28,6 @@ func init() {
 	s3Client = s3.NewFromConfig(cfg)
 }
 
-// DownloadVideo baixa o vídeo do S3 para o /tmp da Lambda
 func DownloadVideo(key string) (string, error) {
 	output, err := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
@@ -54,7 +53,6 @@ func DownloadVideo(key string) (string, error) {
 	return filePath, nil
 }
 
-// UploadFrame faz upload de um frame pro S3 e retorna a URL pública
 func UploadFrame(localPath string, userID string) (string, error) {
 	file, err := os.Open(localPath)
 	if err != nil {
@@ -68,7 +66,7 @@ func UploadFrame(localPath string, userID string) (string, error) {
 		return "", err
 	}
 
-	key := fmt.Sprintf("prints/%s/%s", userID, filepath.Base(localPath))
+	key := fmt.Sprintf("images/%s/%s", userID, filepath.Base(localPath))
 
 	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),
@@ -81,7 +79,6 @@ func UploadFrame(localPath string, userID string) (string, error) {
 		return "", err
 	}
 
-	// URL pública se o bucket permitir
 	url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucket, key)
 	return url, nil
 }
