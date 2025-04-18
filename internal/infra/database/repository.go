@@ -1,4 +1,4 @@
-package repository
+package database
 
 import (
 	"context"
@@ -34,7 +34,6 @@ func SaveFrames(userID, videoKey string, urls []string) error {
 		"CreatedAt": &types.AttributeValueMemberS{Value: time.Now().UTC().Format(time.RFC3339)},
 	}
 
-	// Lista de prints
 	var prints []types.AttributeValue
 	for _, url := range urls {
 		prints = append(prints, &types.AttributeValueMemberS{Value: url})

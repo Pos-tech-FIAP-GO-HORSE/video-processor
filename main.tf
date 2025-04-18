@@ -4,7 +4,6 @@ provider "aws" {
 
 resource "aws_s3_bucket" "video_bucket" {
   bucket = var.s3_bucket_name
-
   force_destroy = true # cuidado em prod
 }
 
@@ -31,6 +30,10 @@ resource "aws_sns_topic" "success_topic" {
 
 resource "aws_sns_topic" "error_topic" {
   name = "video-process-error"
+}
+
+resource "aws_sns_topic" "trigger_topic" {
+  name = "video-process-trigger"
 }
 
 resource "aws_iam_role" "lambda_exec" {
@@ -92,7 +95,7 @@ resource "aws_lambda_function" "video_processor" {
 
   role    = aws_iam_role.lambda_exec.arn
   handler = "main"
-  runtime = "go1.x"
+  runtime = "provided.al2023"
   timeout = 300
 
   filename         = "build/video-processor.zip"
@@ -100,8 +103,8 @@ resource "aws_lambda_function" "video_processor" {
 
   environment {
     variables = {
-      S3_BUCKET                       = aws_s3_bucket.video_bucket.id
-      DYNAMODB_TABLE                  = aws_dynamodb_table.videos_table.id
+      S3_BUCKET                        = aws_s3_bucket.video_bucket.id
+      DYNAMODB_TABLE                   = aws_dynamodb_table.videos_table.id
       PROCESSAMENTO_SUCESSO_TOPIC_ARN = aws_sns_topic.success_topic.arn
       PROCESSAMENTO_ERRO_TOPIC_ARN    = aws_sns_topic.error_topic.arn
     }
@@ -109,7 +112,7 @@ resource "aws_lambda_function" "video_processor" {
 }
 
 resource "aws_sns_topic_subscription" "lambda_trigger" {
-  topic_arn = var.sns_trigger_topic_arn
+  topic_arn = aws_sns_topic.trigger_topic.arn
   protocol  = "lambda"
   endpoint  = aws_lambda_function.video_processor.arn
 }
@@ -119,5 +122,5 @@ resource "aws_lambda_permission" "allow_sns" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.video_processor.function_name
   principal     = "sns.amazonaws.com"
-  source_arn    = var.sns_trigger_topic_arn
+  source_arn    = aws_sns_topic.trigger_topic.arn
 }
