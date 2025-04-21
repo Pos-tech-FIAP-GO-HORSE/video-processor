@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -12,9 +13,8 @@ import (
 )
 
 var (
-	snsClient       *sns.Client
-	successTopicArn = os.Getenv("PROCESSAMENTO_SUCESSO_TOPIC_ARN")
-	errorTopicArn   = os.Getenv("PROCESSAMENTO_ERRO_TOPIC_ARN")
+	snsClient             *sns.Client
+	userNotificationTopic = os.Getenv("USER_NOTIFICATION_TOPIC_ARN")
 )
 
 func init() {
@@ -26,44 +26,22 @@ func init() {
 }
 
 type VideoEvent struct {
-	UserID   string `json:"userId"`
-	VideoKey string `json:"videoKey"`
+	Email     string `json:"email"`
+	VideoName string `json:"videoName"`
 }
 
-func NotifySuccess(event VideoEvent) error {
-	return publish(event, successTopicArn)
-}
-
-func NotifyError(event VideoEvent, err error) error {
-	payload := map[string]interface{}{
-		"userId":   event.UserID,
-		"videoKey": event.VideoKey,
-		"error":    err.Error(),
-	}
-	body, _ := json.Marshal(payload)
-
-	_, pubErr := snsClient.Publish(context.TODO(), &sns.PublishInput{
-		TopicArn: aws.String(errorTopicArn),
-		Message:  aws.String(string(body)),
-	})
-	if pubErr != nil {
-		log.Printf("Erro ao notificar erro no SNS: %v", pubErr)
-	}
-	return pubErr
-}
-
-func publish(event VideoEvent, topicArn string) error {
-	body, err := json.Marshal(event)
-	if err != nil {
-		return err
+func NotifyResult(event VideoEvent) error {
+	body, marshalErr := json.Marshal(event)
+	if marshalErr != nil {
+		return fmt.Errorf("erro ao serializar evento para SNS: %w", marshalErr)
 	}
 
 	_, pubErr := snsClient.Publish(context.TODO(), &sns.PublishInput{
-		TopicArn: aws.String(topicArn),
+		TopicArn: aws.String(userNotificationTopic),
 		Message:  aws.String(string(body)),
 	})
 	if pubErr != nil {
-		log.Printf("Erro ao publicar mensagem SNS: %v", pubErr)
+		log.Printf("Erro ao publicar notificação no SNS: %v", pubErr)
 	}
 	return pubErr
 }

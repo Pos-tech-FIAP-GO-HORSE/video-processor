@@ -8,8 +8,9 @@ import (
 )
 
 type VideoEvent struct {
-	UserID   string `json:"user_id"`
-	VideoKey string `json:"video_key"`
+	UserID    string `json:"user_id"`
+	UserEmail string `json:"user_email"`
+	VideoKey  string `json:"video_key"`
 }
 
 func HandleRequest(snsEvent events.SNSEvent) error {

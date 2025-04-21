@@ -3,8 +3,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "video_bucket" {
-  bucket = var.s3_bucket_name
-  force_destroy = true # cuidado em prod
+  bucket        = var.s3_bucket_name
 }
 
 resource "aws_dynamodb_table" "videos_table" {
@@ -24,12 +23,8 @@ resource "aws_dynamodb_table" "videos_table" {
   }
 }
 
-resource "aws_sns_topic" "success_topic" {
-  name = "video-process-success"
-}
-
-resource "aws_sns_topic" "error_topic" {
-  name = "video-process-error"
+data "aws_sns_topic" "user_notification_topic" {
+  name = "video-user-notification-topic"
 }
 
 resource "aws_sns_topic" "trigger_topic" {
@@ -76,10 +71,7 @@ resource "aws_iam_policy" "lambda_policy" {
       {
         Effect   = "Allow",
         Action   = ["sns:Publish"],
-        Resource = [
-          aws_sns_topic.success_topic.arn,
-          aws_sns_topic.error_topic.arn
-        ]
+        Resource = [data.aws_sns_topic.user_notification_topic.arn]
       }
     ]
   })
@@ -103,10 +95,9 @@ resource "aws_lambda_function" "video_processor" {
 
   environment {
     variables = {
-      S3_BUCKET                        = aws_s3_bucket.video_bucket.id
-      DYNAMODB_TABLE                   = aws_dynamodb_table.videos_table.id
-      PROCESSAMENTO_SUCESSO_TOPIC_ARN = aws_sns_topic.success_topic.arn
-      PROCESSAMENTO_ERRO_TOPIC_ARN    = aws_sns_topic.error_topic.arn
+      S3_BUCKET                    = aws_s3_bucket.video_bucket.id
+      DYNAMODB_TABLE               = aws_dynamodb_table.videos_table.id
+      USER_NOTIFICATION_TOPIC_ARN = data.aws_sns_topic.user_notification_topic.arn
     }
   }
 }
