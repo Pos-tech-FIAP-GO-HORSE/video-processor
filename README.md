@@ -10,7 +10,6 @@ Serviço de processamento de vídeo construído em Go, usando AWS Lambda, S3, Dy
 - Faz upload dos frames gerados no S3
 - Persiste os dados no DynamoDB
 - Notifica serviços externos via SNS:
-    - Em caso de sucesso
     - Em caso de erro
 
 ---
