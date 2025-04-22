@@ -3,30 +3,19 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-var (
-	client    *dynamodb.Client
-	tableName = os.Getenv("DYNAMODB_TABLE")
-)
-
-func init() {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		log.Fatalf("Erro ao carregar config AWS: %v", err)
-	}
-	client = dynamodb.NewFromConfig(cfg)
+type Repository struct {
+	Client    DynamoClient
+	TableName string
 }
 
-func SaveFrames(userID, videoKey string, urls []string) error {
+func (r Repository) SaveFrames(userID, videoKey string, urls []string) error {
 	item := map[string]types.AttributeValue{
 		"PK":        &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%s", userID)},
 		"SK":        &types.AttributeValueMemberS{Value: fmt.Sprintf("VIDEO#%s", videoKey)},
@@ -40,8 +29,8 @@ func SaveFrames(userID, videoKey string, urls []string) error {
 	}
 	item["Prints"] = &types.AttributeValueMemberL{Value: prints}
 
-	_, err := client.PutItem(context.TODO(), &dynamodb.PutItemInput{
-		TableName: aws.String(tableName),
+	_, err := r.Client.PutItem(context.TODO(), &dynamodb.PutItemInput{
+		TableName: aws.String(r.TableName),
 		Item:      item,
 	})
 

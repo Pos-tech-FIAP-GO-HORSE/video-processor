@@ -5,32 +5,27 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
-var (
-	s3Client *s3.Client
-	bucket   = os.Getenv("S3_BUCKET")
-)
-
-func init() {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		log.Fatalf("Erro ao carregar config AWS: %v", err)
-	}
-	s3Client = s3.NewFromConfig(cfg)
+type S3API interface {
+	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
+	PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
 }
 
-func DownloadVideo(key string) (string, error) {
-	output, err := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
+type S3Client struct {
+	Client S3API
+	Bucket string
+}
+
+func (s S3Client) DownloadVideo(key string) (string, error) {
+	output, err := s.Client.GetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
@@ -53,7 +48,7 @@ func DownloadVideo(key string) (string, error) {
 	return filePath, nil
 }
 
-func UploadFrame(localPath string, userID string) (string, error) {
+func (s S3Client) UploadFrame(localPath string, userID string) (string, error) {
 	file, err := os.Open(localPath)
 	if err != nil {
 		return "", err
@@ -68,8 +63,8 @@ func UploadFrame(localPath string, userID string) (string, error) {
 
 	key := fmt.Sprintf("images/%s/%s", userID, filepath.Base(localPath))
 
-	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket:      aws.String(bucket),
+	_, err = s.Client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket:      aws.String(s.Bucket),
 		Key:         aws.String(key),
 		Body:        bytes.NewReader(buffer.Bytes()),
 		ContentType: aws.String("image/jpeg"),
@@ -79,6 +74,6 @@ func UploadFrame(localPath string, userID string) (string, error) {
 		return "", err
 	}
 
-	url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucket, key)
+	url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", s.Bucket, key)
 	return url, nil
 }

@@ -2,10 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/aws/aws-lambda-go/events"
 	"log"
 	"video-processor/internal/service"
+
+	"github.com/aws/aws-lambda-go/events"
 )
+
+type Handler struct {
+	Service service.VideoProcessor
+}
 
 type VideoEvent struct {
 	UserID    string `json:"user_id"`
@@ -13,7 +18,11 @@ type VideoEvent struct {
 	VideoKey  string `json:"video_key"`
 }
 
-func HandleRequest(snsEvent events.SNSEvent) error {
+func NewHandler(s service.VideoProcessor) *Handler {
+	return &Handler{Service: s}
+}
+
+func (h *Handler) HandleRequest(snsEvent events.SNSEvent) error {
 	for _, record := range snsEvent.Records {
 		var videoEvent VideoEvent
 		err := json.Unmarshal([]byte(record.SNS.Message), &videoEvent)
@@ -22,7 +31,7 @@ func HandleRequest(snsEvent events.SNSEvent) error {
 			return err
 		}
 
-		if err := service.ProcessVideo(service.VideoEvent(videoEvent)); err != nil {
+		if err := h.Service.ProcessVideo(service.VideoEvent(videoEvent)); err != nil {
 			log.Printf("Erro ao processar vídeo: %v", err)
 		}
 	}
