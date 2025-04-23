@@ -24,11 +24,14 @@ type S3Client struct {
 }
 
 func (s S3Client) DownloadVideo(key string) (string, error) {
+	fmt.Println("Tentando baixar o vídeo:", key, "do bucket:", s.Bucket)
+
 	output, err := s.Client.GetObject(context.TODO(), &s3.GetObjectInput{
 		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
+		fmt.Printf("Erro ao fazer GetObject: %v\n", err)
 		return "", err
 	}
 	defer output.Body.Close()

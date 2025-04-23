@@ -1,7 +1,11 @@
 package processor_test
 
 import (
+	"fmt"
+	"github.com/stretchr/testify/require"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 	"video-processor/internal/infra/processor"
 
@@ -10,7 +14,15 @@ import (
 
 func TestExtractFrames_Success(t *testing.T) {
 	processor.ExecCommand = func(name string, arg ...string) *exec.Cmd {
-		return exec.Command("echo") // comando que sempre funciona
+		return exec.Command("echo")
+	}
+
+	outputDir := "/tmp"
+	for i := 1; i <= 3; i++ {
+		framePath := filepath.Join(outputDir, fmt.Sprintf("frame-%03d.jpg", i))
+		err := os.WriteFile(framePath, []byte("fake frame content"), 0644)
+		require.NoError(t, err)
+		defer os.Remove(framePath) // Limpa após o teste
 	}
 
 	ffmpeg := processor.FFmpegProcessor{}

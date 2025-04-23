@@ -5,6 +5,7 @@ REGION = us-east-1
 
 build:
 	GOOS=linux GOARCH=amd64 go build -o bootstrap cmd/main.go
+	chmod +x ffmpeg
 	mkdir -p build
 	zip -r build/video-processor.zip bootstrap ffmpeg internal go.mod go.sum
 
