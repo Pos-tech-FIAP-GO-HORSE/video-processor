@@ -2,6 +2,9 @@
 
 Serviço de processamento de vídeo construído em Go, usando AWS Lambda, S3, DynamoDB, SNS e Terraform como infraestrutura.
 
+## Video com explicação
+https://www.youtube.com/watch?v=9fGMerZ8gRs
+
 ---
 
 ## Funcionalidades
